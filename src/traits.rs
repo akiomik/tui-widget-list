@@ -13,4 +13,13 @@ pub trait Listable: Widget {
     {
         self
     }
+
+    /// The truncated widget on top. Optional.
+    #[must_use]
+    fn truncate_top(self, _: usize) -> Self
+    where
+        Self: Sized,
+    {
+        self
+    }
 }

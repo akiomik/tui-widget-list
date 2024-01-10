@@ -102,9 +102,9 @@ impl ListState {
         heights: &[usize],
         max_height: usize,
         truncate: bool,
-    ) -> Vec<usize> {
+    ) -> Vec<(usize, bool)> {
         // The items heights on the viewport will be calculated on the fly.
-        let mut view_heights: Vec<usize> = Vec::new();
+        let mut view_heights: Vec<(usize, bool)> = Vec::new();
 
         // If none is selected, the first item should be show on top of the viewport.
         let selected = self.selected.unwrap_or(0);
@@ -123,7 +123,7 @@ impl ListState {
             if y + height > max_height {
                 if truncate {
                     // Truncate the last widget
-                    view_heights.push(max_height - y);
+                    view_heights.push((max_height - y, false));
                 }
                 break;
             }
@@ -134,7 +134,7 @@ impl ListState {
             }
             y += height;
             i += 1;
-            view_heights.push(*height);
+            view_heights.push((*height, false));
         }
         if found {
             return view_heights;
@@ -153,14 +153,16 @@ impl ListState {
                     // At the moment this will truncate the bottom of the first item, which
                     // looks a bit strange, but I have not figured out how to truncate a
                     // widget from the top.
-                    view_heights.insert(0, max_height - y);
+                    let truncated_height = max_height - y;
+                    let is_truncated = truncated_height < *height;
+                    view_heights.insert(0, (truncated_height, is_truncated));
                     self.offset = i;
                 } else {
                     self.offset = i + 1;
                 }
                 break;
             }
-            view_heights.insert(0, *height);
+            view_heights.insert(0, (*height, false));
             y += height;
             i -= 1;
         }
@@ -209,11 +211,11 @@ mod tests {
     }
 
     update_view_port_tests! {
-        happy_path: [0, Some(0), vec![2, 3], 6], [0, vec![2, 3]],
+        happy_path: [0, Some(0), vec![2, 3], 6], [0, vec![(2, false), (3, false)]],
         empty_list: [0, None, Vec::<usize>::new(), 4], [0, vec![]],
-        update_offset_down: [0, Some(2), vec![2, 3, 3], 6], [1, vec![3, 3]],
-        update_offset_up: [1, Some(0), vec![2, 3, 3], 6], [0, vec![2, 3, 1]],
-        truncate_bottom: [0, Some(0), vec![2, 3], 4], [0, vec![2, 2]],
-        truncate_top: [0, Some(1), vec![2, 3], 4], [0, vec![1, 3]],
+        update_offset_down: [0, Some(2), vec![2, 3, 3], 6], [1, vec![(3, false), (3, false)]],
+        update_offset_up: [1, Some(0), vec![2, 3, 3], 6], [0, vec![(2, false), (3, false), (1, false)]],
+        truncate_bottom: [0, Some(0), vec![2, 3], 4], [0, vec![(2, false), (2, false)]],
+        truncate_top: [0, Some(1), vec![2, 3], 4], [0, vec![(1, true), (3, false)]],
     }
 }

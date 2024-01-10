@@ -151,14 +151,18 @@ impl<'a, T: Listable> StatefulWidget for List<'a, T> {
 
         // Iterate over the modified items
         let offset = state.offset;
-        for (i, height) in view_heights.into_iter().enumerate() {
+        for (i, (height, first_truncated)) in view_heights.into_iter().enumerate() {
             let area = Rect::new(x, y, width, height as u16);
             if state.selected().is_some_and(|s| s == i + offset) {
                 if let Some(item) = highlighted.take() {
                     item.render(area, buf);
                 }
             } else if let Some(item) = view_items.next() {
-                item.render(area, buf);
+                if first_truncated {
+                    item.truncate_top(height).render(area, buf);
+                } else {
+                    item.render(area, buf);
+                }
             }
             y += height as u16;
         }
